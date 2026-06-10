@@ -44,7 +44,7 @@ export interface CreateProductInput {
   sellPrice?: number;
   unit?: string;
   lowStockThreshold?: number;
-  variants?: Array<Record<string, string>>;
+  variants?: Array<{ attributes: Record<string, string>; initialQuantity?: number } | Record<string, string>>;
 }
 
 export interface UpdateProductInput {
@@ -265,7 +265,7 @@ export const getProductById = (productId: number) => {
 };
 
 export const createProduct = async (input: CreateProductInput) => {
-  const variantAttributes = input.variants?.length ? input.variants : [{}];
+  const variantInputs = input.variants?.length ? input.variants : [{ attributes: {}, initialQuantity: 0 }];
   const database = getDatabase();
 
   const insertProduct = database.transaction(() => {
@@ -291,7 +291,15 @@ export const createProduct = async (input: CreateProductInput) => {
     const productId = Number(result.lastInsertRowid);
     const variantIds: number[] = [];
 
-    for (const attributes of variantAttributes) {
+    for (const variantInput of variantInputs) {
+      const attributes =
+        'attributes' in variantInput && typeof variantInput.attributes === 'object'
+          ? variantInput.attributes
+          : (variantInput as Record<string, string>);
+      const initialQuantity =
+        'initialQuantity' in variantInput && typeof variantInput.initialQuantity === 'number'
+          ? Math.max(0, variantInput.initialQuantity)
+          : 0;
       const variant = run(
         `
           INSERT INTO product_variants (product_id, sku, attributes)
@@ -302,7 +310,18 @@ export const createProduct = async (input: CreateProductInput) => {
       const variantId = Number(variant.lastInsertRowid);
       const sku = skuFor(productId, variantId);
       run('UPDATE product_variants SET sku = ? WHERE id = ?', [sku, variantId]);
-      run('INSERT INTO stock (variant_id, quantity) VALUES (?, 0)', [variantId]);
+      run('INSERT INTO stock (variant_id, quantity) VALUES (?, ?)', [variantId, initialQuantity]);
+      if (initialQuantity > 0) {
+        run(
+          `
+            INSERT INTO stock_movements (
+              variant_id, user_id, type, quantity_delta, quantity_before, quantity_after, note
+            )
+            VALUES (?, ?, 'restock', ?, 0, ?, 'Initial stock')
+          `,
+          [variantId, input.userId, initialQuantity, initialQuantity],
+        );
+      }
       variantIds.push(variantId);
     }
 
@@ -487,7 +506,23 @@ export const recordSale = (input: RecordSaleInput) => {
 };
 
 export const getRecentSales = (limit = 20) => {
-  return all('SELECT * FROM sales ORDER BY sold_at DESC LIMIT ?', [limit]);
+  return all(
+    `
+      SELECT
+        s.*,
+        p.id AS product_id,
+        p.name AS product_name,
+        p.cost_price,
+        v.sku,
+        v.attributes
+      FROM sales s
+      JOIN product_variants v ON v.id = s.variant_id
+      JOIN products p ON p.id = v.product_id
+      ORDER BY s.sold_at DESC
+      LIMIT ?
+    `,
+    [limit],
+  );
 };
 
 export const getSalesByRange = (from: string, to: string) => {
@@ -549,8 +584,17 @@ const summaryBy = (periodExpression: string, from?: string, to?: string) => {
 
   return all(
     `
-      SELECT ${periodExpression} AS period, SUM(quantity) AS quantity, SUM(total) AS total
-      FROM sales
+      SELECT
+        ${periodExpression} AS period,
+        COUNT(s.id) AS sale_count,
+        COUNT(DISTINCT v.product_id) AS unique_products,
+        COALESCE(SUM(s.quantity), 0) AS quantity,
+        COALESCE(SUM(s.total), 0) AS total,
+        COALESCE(SUM((s.unit_price - p.cost_price) * s.quantity), 0) AS profit,
+        COALESCE(SUM(p.cost_price * s.quantity), 0) AS cost
+      FROM sales s
+      JOIN product_variants v ON v.id = s.variant_id
+      JOIN products p ON p.id = v.product_id
       ${where}
       GROUP BY period
       ORDER BY period DESC

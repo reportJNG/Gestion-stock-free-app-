@@ -875,6 +875,337 @@ a {
   gap: var(--space-3);
 }
 
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.dashboard-header h1 {
+  margin: 0 0 var(--space-2);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.dashboard-header p,
+.dashboard-header-actions span,
+.panel-heading p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.stat-card {
+  display: flex;
+  min-height: 168px;
+  flex-direction: column;
+  padding: var(--space-5) var(--space-6);
+}
+
+.stat-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--bg-active);
+  color: var(--accent);
+}
+
+.stat-card strong {
+  margin-top: var(--space-5);
+  color: var(--text-primary);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.stat-card span {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.stat-card p {
+  margin: var(--space-3) 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.stat-sub-ok {
+  color: var(--status-ok) !important;
+}
+
+.stat-sub-warn {
+  color: var(--status-warn) !important;
+}
+
+.stat-sub-danger {
+  color: var(--status-danger) !important;
+}
+
+.dashboard-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(320px, 1fr);
+  gap: var(--space-4);
+}
+
+.dashboard-panel {
+  min-width: 0;
+}
+
+.weekly-panel,
+.low-stock-panel,
+.recent-sales-panel {
+  padding: var(--space-6);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.panel-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-size: 17px;
+}
+
+.chart-wrap {
+  width: 100%;
+  overflow: hidden;
+}
+
+.chart-wrap svg {
+  display: block;
+  width: 100%;
+  min-height: 260px;
+}
+
+.chart-grid {
+  stroke: var(--border-subtle);
+  stroke-width: 1;
+}
+
+.chart-area {
+  fill: rgba(255, 255, 255, 0.06);
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.chart-dot {
+  fill: var(--accent);
+  opacity: 0;
+}
+
+.chart-wrap svg:hover .chart-dot {
+  opacity: 1;
+}
+
+.chart-label {
+  fill: var(--text-muted);
+  font-size: 12px;
+}
+
+.low-stock-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.low-stock-list {
+  display: flex;
+  max-height: 360px;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.low-stock-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: var(--space-3) 0;
+  text-align: left;
+}
+
+.low-stock-row:hover {
+  background: var(--bg-hover);
+}
+
+.low-stock-row span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.low-stock-row strong,
+.sales-table strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.low-stock-row small,
+.sales-table small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.panel-link {
+  margin-top: var(--space-4);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.panel-link:hover {
+  color: var(--text-primary);
+}
+
+.dashboard-empty {
+  position: relative;
+  display: flex;
+  min-height: 180px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.dashboard-empty.compact {
+  flex: 1;
+  min-height: 220px;
+  color: var(--status-ok);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.sales-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.sales-table th {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.sales-table th,
+.sales-table td {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-3);
+}
+
+.sales-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-elevated) 50%, var(--bg-surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-line {
+  width: 220px;
+  height: 16px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-line.wide {
+  width: 320px;
+  height: 28px;
+  margin-bottom: var(--space-3);
+}
+
+.skeleton-button {
+  width: 116px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-stat {
+  min-height: 168px;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-chart,
+.skeleton-side {
+  min-height: 348px;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.skeleton-row {
+  height: 42px;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 @media (max-width: 860px) {
   .auth-screen {
     align-items: stretch;
@@ -910,5 +1241,28 @@ a {
 
   .business-grid {
     grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .dashboard-header,
+  .dashboard-header-actions,
+  .panel-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 }
