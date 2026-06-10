@@ -13,6 +13,8 @@ import { ProductsPage } from '@/routes/ProductsPage';
 import { RegisterPage } from '@/routes/RegisterPage';
 import { ReportingPage } from '@/routes/ReportingPage';
 import { ScannerPage } from '@/routes/ScannerPage';
+import { ProfilePage } from '@/routes/ProfilePage';
+import { SettingsPage } from '@/routes/SettingsPage';
 import { StockPage } from '@/routes/StockPage';
 
 export const App = () => {
@@ -32,8 +34,8 @@ export const App = () => {
             <Route path="/scan" element={<ScannerPage />} />
             <Route path="/reporting" element={<ReportingPage />} />
             <Route path="/economy" element={<EconomyPage />} />
-            <Route path="/profile" element={<Page title="Profile" />} />
-            <Route path="/settings" element={<Page title="Settings" />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/contact" element={<Page title="Contact" />} />
             <Route path="/dev" element={<Dev />} />
           </Route>

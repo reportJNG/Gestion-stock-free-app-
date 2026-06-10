@@ -53,6 +53,7 @@ const api = {
     },
     settings: {
       get: (userId: number, key: string) => ipcRenderer.invoke('db:settings:get', userId, key),
+      getAll: (userId: number) => ipcRenderer.invoke('db:settings:getAll', userId),
       set: (userId: number, key: string, value: string) => ipcRenderer.invoke('db:settings:set', userId, key, value),
     },
     categoryTemplates: {
@@ -73,6 +74,11 @@ const api = {
   },
   file: {
     saveCsv: (filename: string, content: string) => ipcRenderer.invoke('file:saveCsv', filename, content),
+    exportBackup: () => ipcRenderer.invoke('file:exportBackup'),
+    importBackup: () => ipcRenderer.invoke('file:importBackup'),
+  },
+  profile: {
+    stats: (userId: number) => ipcRenderer.invoke('db:profile:stats', userId),
   },
 };
 

@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
-import { writeFile } from 'node:fs/promises';
+import { copyFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   addVariantQuantity,
@@ -20,6 +20,8 @@ import {
   getRecentSales,
   getSalesByRange,
   getSetting,
+  getAllSettings,
+  getProfileStats,
   getTopBuyers,
   getTopProducts,
   getSummaryByRange,
@@ -103,6 +105,24 @@ const registerIpcHandlers = (): void => {
     await writeFile(result.filePath, content, 'utf8');
     return { canceled: false, filePath: result.filePath };
   });
+  ipcMain.handle('file:exportBackup', async () => {
+    const result = await dialog.showSaveDialog({
+      defaultPath: `stockflow-backup-${new Date().toISOString().slice(0, 10)}.db`,
+      filters: [{ name: 'SQLite database', extensions: ['db'] }],
+    });
+    if (result.canceled || !result.filePath) return { canceled: true };
+    await copyFile(join(app.getPath('userData'), 'stockflow.db'), result.filePath);
+    return { canceled: false, filePath: result.filePath };
+  });
+  ipcMain.handle('file:importBackup', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'SQLite database', extensions: ['db'] }],
+    });
+    if (result.canceled || !result.filePaths[0]) return { canceled: true };
+    await copyFile(result.filePaths[0], join(app.getPath('userData'), 'stockflow.db'));
+    return { canceled: false, filePath: result.filePaths[0] };
+  });
   ipcMain.handle('db:reports:dailySummary', (_event, from?: string, to?: string) => getDailySummary(from, to));
   ipcMain.handle('db:reports:weeklySummary', (_event, from?: string, to?: string) => getWeeklySummary(from, to));
   ipcMain.handle('db:reports:topProducts', (_event, limit?: number) => getTopProducts(limit));
@@ -122,7 +142,9 @@ const registerIpcHandlers = (): void => {
   ipcMain.handle('db:archives:getAll', (_event, limit?: number, offset?: number) => getArchives(limit, offset));
   ipcMain.handle('db:archives:restore', (_event, archiveId: number) => restoreArchive(archiveId));
   ipcMain.handle('db:settings:get', (_event, userId: number, key: string) => getSetting(userId, key));
+  ipcMain.handle('db:settings:getAll', (_event, userId: number) => getAllSettings(userId));
   ipcMain.handle('db:settings:set', (_event, userId: number, key: string, value: string) => setSetting(userId, key, value));
+  ipcMain.handle('db:profile:stats', (_event, userId: number) => getProfileStats(userId));
   ipcMain.handle('db:categoryTemplates:getAll', () => getCategoryTemplates());
 
   ipcMain.handle('window:minimize', () => {

@@ -862,6 +862,11 @@ export const getSetting = (userId: number, key: string) => {
   return get('SELECT value FROM app_settings WHERE user_id = ? AND key = ?', [userId, key]);
 };
 
+export const getAllSettings = (userId: number) => {
+  seedDefaultSettings(userId);
+  return all('SELECT key, value FROM app_settings WHERE user_id = ? ORDER BY key', [userId]);
+};
+
 export const setSetting = (userId: number, key: string, value: string) => {
   return run(
     `
@@ -870,6 +875,18 @@ export const setSetting = (userId: number, key: string, value: string) => {
       ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
     `,
     [userId, key, value],
+  );
+};
+
+export const getProfileStats = (userId: number) => {
+  return get(
+    `
+      SELECT
+        (SELECT COUNT(*) FROM products WHERE user_id = ? AND is_archived = 0) AS products,
+        (SELECT COUNT(*) FROM sales WHERE user_id = ?) AS total_sales,
+        (SELECT COALESCE(SUM(total), 0) FROM sales WHERE user_id = ?) AS total_revenue
+    `,
+    [userId, userId, userId],
   );
 };
 
