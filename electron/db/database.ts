@@ -223,15 +223,15 @@ export const getProducts = (filter: ProductFilter) => {
   }
 
   if (filter.search) {
-    clauses.push('(p.name LIKE ? OR p.description LIKE ?)');
-    params.push(`%${filter.search}%`, `%${filter.search}%`);
+    clauses.push('(p.name LIKE ? OR p.description LIKE ? OR CAST(p.id AS TEXT) LIKE ?)');
+    params.push(`%${filter.search}%`, `%${filter.search}%`, `%${filter.search}%`);
   }
 
   params.push(filter.limit ?? 50, filter.offset ?? 0);
 
   return all(
     `
-      SELECT p.*, COALESCE(SUM(s.quantity), 0) AS total_quantity
+      SELECT p.*, COALESCE(SUM(s.quantity), 0) AS total_quantity, COUNT(v.id) AS variant_count
       FROM products p
       LEFT JOIN product_variants v ON v.product_id = p.id
       LEFT JOIN stock s ON s.variant_id = v.id

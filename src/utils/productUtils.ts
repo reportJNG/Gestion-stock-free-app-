@@ -14,6 +14,7 @@ export interface ProductRow {
   created_at: string;
   updated_at?: string;
   total_quantity?: number;
+  variant_count?: number;
   variants?: VariantRow[];
 }
 
