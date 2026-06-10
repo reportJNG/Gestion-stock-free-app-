@@ -9,6 +9,8 @@ export default defineConfig({
     build: {
       lib: {
         entry: resolve('electron/main.ts'),
+        formats: ['cjs'],
+        fileName: () => 'main.cjs',
       },
     },
   },
@@ -17,6 +19,8 @@ export default defineConfig({
     build: {
       lib: {
         entry: resolve('electron/preload.ts'),
+        formats: ['cjs'],
+        fileName: () => 'preload.cjs',
       },
     },
   },

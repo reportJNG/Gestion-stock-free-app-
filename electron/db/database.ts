@@ -1,10 +1,12 @@
 import { app } from 'electron';
-import Database from 'better-sqlite3';
+import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import QRCode from 'qrcode';
 import { categoryTemplateSeeds, defaultSettings, migrations } from './migrations';
 
-export type SqlParams = unknown[] | Record<string, unknown>;
+type SqlParam = SQLInputValue | undefined;
+export type SqlParams = SqlParam[] | Record<string, SqlParam>;
 export type StockMovementType = 'sale' | 'restock' | 'adjustment' | 'loss' | 'return';
 
 export interface RunResult {
@@ -67,20 +69,21 @@ export interface RecordSaleInput {
   note?: string;
 }
 
-let db: Database.Database | null = null;
+let db: DatabaseSync | null = null;
 
-const getDatabase = (): Database.Database => {
+const getDatabase = (): DatabaseSync => {
   if (db) {
     return db;
   }
 
   const dbPath = join(app.getPath('userData'), 'stockflow.db');
-  db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-  db.pragma('synchronous = NORMAL');
+  mkdirSync(app.getPath('userData'), { recursive: true });
+  db = new DatabaseSync(dbPath);
+  db.exec('PRAGMA journal_mode = WAL');
+  db.exec('PRAGMA foreign_keys = ON');
+  db.exec('PRAGMA synchronous = NORMAL');
 
-  const migrate = db.transaction(() => {
+  const migrate = transaction(() => {
     for (const migration of migrations) {
       db?.exec(migration);
     }
@@ -91,6 +94,35 @@ const getDatabase = (): Database.Database => {
   migrate();
 
   return db;
+};
+
+const toSqlInput = (value: SqlParam): SQLInputValue => value ?? null;
+
+const bindParams = (params: SqlParams): SQLInputValue[] | [Record<string, SQLInputValue>] => {
+  if (Array.isArray(params)) {
+    return params.map(toSqlInput);
+  }
+
+  return [
+    Object.fromEntries(
+      Object.entries(params).map(([key, value]) => [key, toSqlInput(value)]),
+    ),
+  ];
+};
+
+const transaction = <T>(callback: () => T): (() => T) => {
+  return () => {
+    const database = getDatabase();
+    database.exec('BEGIN');
+    try {
+      const result = callback();
+      database.exec('COMMIT');
+      return result;
+    } catch (error) {
+      database.exec('ROLLBACK');
+      throw error;
+    }
+  };
 };
 
 const seedCategoryTemplates = (): void => {
@@ -137,10 +169,10 @@ export const initDatabase = (): void => {
 };
 
 export const run = (sql: string, params: SqlParams = []): RunResult => {
-  const result = getDatabase().prepare(sql).run(params);
+  const result = getDatabase().prepare(sql).run(...(bindParams(params) as [SQLInputValue, ...SQLInputValue[]]));
 
   return {
-    changes: result.changes,
+    changes: Number(result.changes),
     lastInsertRowid: result.lastInsertRowid,
   };
 };
@@ -149,14 +181,14 @@ export const get = <T = Record<string, unknown>>(
   sql: string,
   params: SqlParams = [],
 ): T | undefined => {
-  return getDatabase().prepare(sql).get(params) as T | undefined;
+  return getDatabase().prepare(sql).get(...(bindParams(params) as [SQLInputValue, ...SQLInputValue[]])) as T | undefined;
 };
 
 export const all = <T = Record<string, unknown>>(
   sql: string,
   params: SqlParams = [],
 ): T[] => {
-  return getDatabase().prepare(sql).all(params) as T[];
+  return getDatabase().prepare(sql).all(...(bindParams(params) as [SQLInputValue, ...SQLInputValue[]])) as T[];
 };
 
 export const getAllUsers = () => {
@@ -168,7 +200,7 @@ export const getUserById = (id: number) => {
 };
 
 export const createUser = (input: CreateUserInput) => {
-  const create = getDatabase().transaction(() => {
+  const create = transaction(() => {
     const result = run(
       `
         INSERT INTO users (name, password_hash, business_type, avatar_initials)
@@ -268,7 +300,7 @@ export const createProduct = async (input: CreateProductInput) => {
   const variantInputs = input.variants?.length ? input.variants : [{ attributes: {}, initialQuantity: 0 }];
   const database = getDatabase();
 
-  const insertProduct = database.transaction(() => {
+  const insertProduct = transaction(() => {
     const result = run(
       `
         INSERT INTO products (
@@ -373,7 +405,7 @@ export const updateProduct = (productId: number, input: UpdateProductInput) => {
 };
 
 export const deleteProduct = (productId: number, deletedBy: number, reason = '') => {
-  const remove = getDatabase().transaction(() => {
+  const remove = transaction(() => {
     const snapshot = getProductById(productId);
     if (!snapshot) {
       return { changes: 0, lastInsertRowid: 0 };
@@ -428,7 +460,7 @@ const applyStockMovement = (
   buyerName?: string,
   note = '',
 ) => {
-  const apply = getDatabase().transaction(() => {
+  const apply = transaction(() => {
     const stock = get<{ quantity: number }>('SELECT quantity FROM stock WHERE variant_id = ?', [variantId]);
     if (!stock) {
       throw new Error(`Stock row not found for variant ${variantId}`);
@@ -458,7 +490,7 @@ const applyStockMovement = (
 export const recordSale = (input: RecordSaleInput) => {
   const quantity = input.quantity ?? 1;
 
-  const record = getDatabase().transaction(() => {
+  const record = transaction(() => {
     const variant = get<{ sell_price: number }>(
       `
         SELECT p.sell_price

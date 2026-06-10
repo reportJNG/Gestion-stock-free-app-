@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Archive, BoxArchive, Download, RotateCcw } from 'lucide-react';
+import { Archive, Download, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -147,7 +147,7 @@ export const ArchivesPage = () => {
           </Card>
         );
       }) : (
-        <Card className="products-empty"><BoxArchive size={48} /><h2>No archived products</h2><p>Products you remove will appear here</p></Card>
+        <Card className="products-empty"><Archive size={48} /><h2>No archived products</h2><p>Products you remove will appear here</p></Card>
       )}
 
       <div className="pagination-row">

@@ -51,6 +51,35 @@ import {
 
 let mainWindow: BrowserWindow | null = null;
 
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-gpu-compositing');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('in-process-gpu');
+app.commandLine.appendSwitch('disable-features', 'UseSkiaRenderer,VizDisplayCompositor');
+app.setPath('userData', join(process.cwd(), '.stockflow-data'));
+
+const loadRenderer = async (window: BrowserWindow): Promise<void> => {
+  if (!process.env.ELECTRON_RENDERER_URL) {
+    await window.loadFile(join(__dirname, '../renderer/index.html'));
+    return;
+  }
+
+  let retryCount = 0;
+  window.webContents.on('did-fail-load', (_event, errorCode, _description, url) => {
+    if (url !== process.env.ELECTRON_RENDERER_URL || errorCode === -3 || retryCount >= 10) {
+      return;
+    }
+
+    retryCount += 1;
+    setTimeout(() => {
+      void window.loadURL(process.env.ELECTRON_RENDERER_URL as string);
+    }, 300);
+  });
+
+  await window.loadURL(process.env.ELECTRON_RENDERER_URL).catch(() => undefined);
+};
+
 const createWindow = async (): Promise<void> => {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -61,17 +90,13 @@ const createWindow = async (): Promise<void> => {
     transparent: false,
     backgroundColor: '#0a0a0a',
     webPreferences: {
-      preload: join(__dirname, '../preload/preload.mjs'),
+      preload: join(__dirname, '../preload/preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
 
-  if (process.env.ELECTRON_RENDERER_URL) {
-    await mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
-  } else {
-    await mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
-  }
+  await loadRenderer(mainWindow);
 };
 
 const registerIpcHandlers = (): void => {
