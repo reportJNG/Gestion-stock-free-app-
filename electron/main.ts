@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   addVariantQuantity,
@@ -13,6 +14,7 @@ import {
   getCategoryTemplates,
   getDailySummary,
   getLowStock,
+  getStockMovements,
   getProductById,
   getProducts,
   getRecentSales,
@@ -81,6 +83,16 @@ const registerIpcHandlers = (): void => {
   ipcMain.handle('db:sales:getByRange', (_event, from: string, to: string) => getSalesByRange(from, to));
   ipcMain.handle('db:stock:getAll', () => getAllStock());
   ipcMain.handle('db:stock:getLow', () => getLowStock());
+  ipcMain.handle('db:stock:getMovements', (_event, variantId: number) => getStockMovements(variantId));
+  ipcMain.handle('file:saveCsv', async (_event, filename: string, content: string) => {
+    const result = await dialog.showSaveDialog({
+      defaultPath: filename,
+      filters: [{ name: 'CSV', extensions: ['csv'] }],
+    });
+    if (result.canceled || !result.filePath) return { canceled: true };
+    await writeFile(result.filePath, content, 'utf8');
+    return { canceled: false, filePath: result.filePath };
+  });
   ipcMain.handle('db:reports:dailySummary', (_event, from?: string, to?: string) => getDailySummary(from, to));
   ipcMain.handle('db:reports:weeklySummary', (_event, from?: string, to?: string) => getWeeklySummary(from, to));
   ipcMain.handle('db:reports:topProducts', (_event, limit?: number) => getTopProducts(limit));

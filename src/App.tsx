@@ -10,6 +10,7 @@ import { Page } from '@/routes/Page';
 import { ProductDetails } from '@/routes/ProductDetails';
 import { ProductsPage } from '@/routes/ProductsPage';
 import { RegisterPage } from '@/routes/RegisterPage';
+import { StockPage } from '@/routes/StockPage';
 
 export const App = () => {
   return (
@@ -24,7 +25,7 @@ export const App = () => {
             <Route path="/home" element={<DashboardPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:id" element={<ProductDetails />} />
-            <Route path="/stock" element={<Page title="Stock" />} />
+            <Route path="/stock" element={<StockPage />} />
             <Route path="/scan" element={<Page title="Scanner" />} />
             <Route path="/reporting" element={<Page title="Reports" />} />
             <Route path="/economy" element={<Page title="Economy" />} />

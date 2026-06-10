@@ -535,11 +535,15 @@ export const getAllStock = () => {
       v.id AS variant_id,
       p.id AS product_id,
       p.name AS product_name,
+      p.category,
       v.sku,
       v.attributes,
+      v.qr_code_data,
       COALESCE(s.quantity, 0) AS quantity,
       p.low_stock_threshold,
+      p.cost_price,
       p.sell_price
+      ,s.updated_at AS last_updated
     FROM product_variants v
     JOIN products p ON p.id = v.product_id
     LEFT JOIN stock s ON s.variant_id = v.id
@@ -554,11 +558,15 @@ export const getLowStock = () => {
       v.id AS variant_id,
       p.id AS product_id,
       p.name AS product_name,
+      p.category,
       v.sku,
       v.attributes,
+      v.qr_code_data,
       COALESCE(s.quantity, 0) AS quantity,
       p.low_stock_threshold,
-      p.sell_price
+      p.cost_price,
+      p.sell_price,
+      s.updated_at AS last_updated
     FROM product_variants v
     JOIN products p ON p.id = v.product_id
     LEFT JOIN stock s ON s.variant_id = v.id
@@ -647,4 +655,16 @@ export const setSetting = (userId: number, key: string, value: string) => {
 
 export const getCategoryTemplates = () => {
   return all('SELECT * FROM category_templates ORDER BY name ASC');
+};
+
+export const getStockMovements = (variantId: number) => {
+  return all(
+    `
+      SELECT *
+      FROM stock_movements
+      WHERE variant_id = ?
+      ORDER BY created_at DESC
+    `,
+    [variantId],
+  );
 };

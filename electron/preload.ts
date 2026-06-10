@@ -33,6 +33,7 @@ const api = {
     stock: {
       getAll: () => ipcRenderer.invoke('db:stock:getAll'),
       getLow: () => ipcRenderer.invoke('db:stock:getLow'),
+      getMovements: (variantId: number) => ipcRenderer.invoke('db:stock:getMovements', variantId),
     },
     reports: {
       dailySummary: (from?: string, to?: string) => ipcRenderer.invoke('db:reports:dailySummary', from, to),
@@ -56,6 +57,9 @@ const api = {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),
     close: () => ipcRenderer.invoke('window:close'),
+  },
+  file: {
+    saveCsv: (filename: string, content: string) => ipcRenderer.invoke('file:saveCsv', filename, content),
   },
 };
 
