@@ -11,6 +11,7 @@ import {
   getAllStock,
   getAllUsers,
   getArchives,
+  getArchiveCount,
   getCategoryTemplates,
   getDailySummary,
   getLowStock,
@@ -139,7 +140,10 @@ const registerIpcHandlers = (): void => {
   ipcMain.handle('db:economy:categoryPerformance', (_event, userId: number, start?: string, end?: string) => getEconomyCategoryPerformance(userId, start, end));
   ipcMain.handle('db:economy:slowMovers', (_event, userId: number, dayThreshold?: number) => getEconomySlowMovers(userId, dayThreshold));
   ipcMain.handle('db:economy:profitableVariants', (_event, userId: number) => getEconomyProfitableVariants(userId));
-  ipcMain.handle('db:archives:getAll', (_event, limit?: number, offset?: number) => getArchives(limit, offset));
+  ipcMain.handle('db:archives:getAll', (_event, userId?: number, limit?: number, offset?: number, query?: string, from?: string, to?: string) =>
+    getArchives(userId, limit, offset, query, from, to),
+  );
+  ipcMain.handle('db:archives:count', (_event, userId: number, query?: string, from?: string, to?: string) => getArchiveCount(userId, query, from, to));
   ipcMain.handle('db:archives:restore', (_event, archiveId: number) => restoreArchive(archiveId));
   ipcMain.handle('db:settings:get', (_event, userId: number, key: string) => getSetting(userId, key));
   ipcMain.handle('db:settings:getAll', (_event, userId: number) => getAllSettings(userId));

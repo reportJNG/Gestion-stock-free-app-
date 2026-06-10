@@ -1,5 +1,6 @@
 import {
   BarChart2,
+  Archive,
   Code2,
   LayoutDashboard,
   Layers,
@@ -25,6 +26,7 @@ const navItems: Array<{ to: string; label: string; icon: LucideIcon }> = [
   { to: '/profile', label: 'Profile', icon: User },
   { to: '/settings', label: 'Settings', icon: Settings },
   { to: '/contact', label: 'Contact', icon: Mail },
+  { to: '/archives', label: 'Archives', icon: Archive },
   { to: '/dev', label: 'Dev', icon: Code2 },
 ];
 

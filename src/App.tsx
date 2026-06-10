@@ -3,6 +3,7 @@ import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { ToastProvider } from '@/components/ui/Toast';
 import { DashboardPage } from '@/routes/DashboardPage';
+import { ArchivesPage } from '@/routes/ArchivesPage';
 import { Dev } from '@/routes/Dev';
 import { EconomyPage } from '@/routes/EconomyPage';
 import { ForgotPasswordPage } from '@/routes/ForgotPasswordPage';
@@ -37,6 +38,7 @@ export const App = () => {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/contact" element={<Page title="Contact" />} />
+            <Route path="/archives" element={<ArchivesPage />} />
             <Route path="/dev" element={<Dev />} />
           </Route>
         </Route>

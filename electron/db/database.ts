@@ -850,12 +850,102 @@ export const getEconomyProfitableVariants = (userId: number) => {
   );
 };
 
-export const getArchives = (limit = 50, offset = 0) => {
-  return all('SELECT * FROM archives ORDER BY archived_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+export const getArchives = (userId?: number, limit = 50, offset = 0, query = '', from?: string, to?: string) => {
+  const clauses: string[] = [];
+  const params: Array<string | number> = [];
+
+  if (userId) {
+    clauses.push("(json_extract(a.product_snapshot, '$.user_id') = ? OR json_extract(a.product_snapshot, '$.userId') = ?)");
+    params.push(userId, userId);
+  }
+  if (query) {
+    clauses.push('a.product_snapshot LIKE ?');
+    params.push(`%${query}%`);
+  }
+  if (from) {
+    clauses.push('a.archived_at >= ?');
+    params.push(from);
+  }
+  if (to) {
+    clauses.push('a.archived_at <= ?');
+    params.push(to);
+  }
+
+  params.push(limit, offset);
+
+  return all(
+    `
+      SELECT
+        a.id,
+        a.product_id,
+        a.product_snapshot,
+        a.reason,
+        a.archived_at,
+        u.name as deleted_by_name
+      FROM archives a
+      JOIN users u ON a.deleted_by = u.id
+      ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''}
+      ORDER BY a.archived_at DESC
+      LIMIT ? OFFSET ?
+    `,
+    params,
+  );
 };
 
-export const restoreArchive = (archiveId: number) => {
-  return get('SELECT * FROM archives WHERE id = ?', [archiveId]);
+export const getArchiveCount = (userId: number, query = '', from?: string, to?: string) => {
+  const clauses = ["(json_extract(product_snapshot, '$.user_id') = ? OR json_extract(product_snapshot, '$.userId') = ?)"];
+  const params: Array<string | number> = [userId, userId];
+  if (query) {
+    clauses.push('product_snapshot LIKE ?');
+    params.push(`%${query}%`);
+  }
+  if (from) {
+    clauses.push('archived_at >= ?');
+    params.push(from);
+  }
+  if (to) {
+    clauses.push('archived_at <= ?');
+    params.push(to);
+  }
+  return get<{ total: number }>(`SELECT COUNT(*) as total FROM archives WHERE ${clauses.join(' AND ')}`, params);
+};
+
+export const restoreArchive = async (archiveId: number) => {
+  const archive = get<{ product_snapshot: string }>('SELECT product_snapshot FROM archives WHERE id = ?', [archiveId]);
+  if (!archive) {
+    return undefined;
+  }
+
+  const snapshot = JSON.parse(archive.product_snapshot) as {
+    user_id?: number;
+    userId?: number;
+    name: string;
+    category: string;
+    description?: string;
+    cost_price?: number;
+    sell_price?: number;
+    unit?: string;
+    low_stock_threshold?: number;
+    variants?: Array<{ attributes: string | Record<string, string> }>;
+  };
+
+  const created = await createProduct({
+    userId: Number(snapshot.user_id ?? snapshot.userId),
+    name: snapshot.name,
+    category: snapshot.category,
+    description: snapshot.description ?? '',
+    costPrice: snapshot.cost_price ?? 0,
+    sellPrice: snapshot.sell_price ?? 0,
+    unit: snapshot.unit ?? 'piece',
+    lowStockThreshold: snapshot.low_stock_threshold ?? 5,
+    variants: (snapshot.variants?.length ? snapshot.variants : [{ attributes: {} }]).map((variant) => ({
+      attributes: typeof variant.attributes === 'string' ? JSON.parse(variant.attributes || '{}') : variant.attributes,
+      initialQuantity: 0,
+    })),
+  });
+
+  run('DELETE FROM archives WHERE id = ?', [archiveId]);
+  return created;
 };
 
 export const getSetting = (userId: number, key: string) => {

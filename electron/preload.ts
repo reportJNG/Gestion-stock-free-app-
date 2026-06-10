@@ -48,7 +48,8 @@ const api = {
       salesLog: (userId: number, start: string, end: string) => ipcRenderer.invoke('db:reports:salesLog', userId, start, end),
     },
     archives: {
-      getAll: (limit?: number, offset?: number) => ipcRenderer.invoke('db:archives:getAll', limit, offset),
+      getAll: (userId?: number, limit?: number, offset?: number, query?: string, from?: string, to?: string) => ipcRenderer.invoke('db:archives:getAll', userId, limit, offset, query, from, to),
+      count: (userId: number, query?: string, from?: string, to?: string) => ipcRenderer.invoke('db:archives:count', userId, query, from, to),
       restore: (archiveId: number) => ipcRenderer.invoke('db:archives:restore', archiveId),
     },
     settings: {
