@@ -27,6 +27,11 @@ import {
   getCategoryBreakdown,
   getPeriodComparison,
   getSalesLogByRange,
+  getEconomyTopProducts,
+  getEconomyTopBuyers,
+  getEconomyCategoryPerformance,
+  getEconomySlowMovers,
+  getEconomyProfitableVariants,
   getUserById,
   getVariantBySku,
   getVariantsByProduct,
@@ -109,6 +114,11 @@ const registerIpcHandlers = (): void => {
     getPeriodComparison(userId, currentStart, currentEnd, prevStart, prevEnd),
   );
   ipcMain.handle('db:reports:salesLog', (_event, userId: number, start: string, end: string) => getSalesLogByRange(userId, start, end));
+  ipcMain.handle('db:economy:topProducts', (_event, userId: number, limit?: number, start?: string, end?: string) => getEconomyTopProducts(userId, limit, start, end));
+  ipcMain.handle('db:economy:topBuyers', (_event, userId: number, limit?: number, start?: string, end?: string) => getEconomyTopBuyers(userId, limit, start, end));
+  ipcMain.handle('db:economy:categoryPerformance', (_event, userId: number, start?: string, end?: string) => getEconomyCategoryPerformance(userId, start, end));
+  ipcMain.handle('db:economy:slowMovers', (_event, userId: number, dayThreshold?: number) => getEconomySlowMovers(userId, dayThreshold));
+  ipcMain.handle('db:economy:profitableVariants', (_event, userId: number) => getEconomyProfitableVariants(userId));
   ipcMain.handle('db:archives:getAll', (_event, limit?: number, offset?: number) => getArchives(limit, offset));
   ipcMain.handle('db:archives:restore', (_event, archiveId: number) => restoreArchive(archiveId));
   ipcMain.handle('db:settings:get', (_event, userId: number, key: string) => getSetting(userId, key));

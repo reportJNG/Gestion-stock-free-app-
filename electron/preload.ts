@@ -59,6 +59,13 @@ const api = {
       getAll: () => ipcRenderer.invoke('db:categoryTemplates:getAll'),
     },
   },
+  economy: {
+    topProducts: (userId: number, limit?: number, start?: string, end?: string) => ipcRenderer.invoke('db:economy:topProducts', userId, limit, start, end),
+    topBuyers: (userId: number, limit?: number, start?: string, end?: string) => ipcRenderer.invoke('db:economy:topBuyers', userId, limit, start, end),
+    categoryPerformance: (userId: number, start?: string, end?: string) => ipcRenderer.invoke('db:economy:categoryPerformance', userId, start, end),
+    slowMovers: (userId: number, dayThreshold?: number) => ipcRenderer.invoke('db:economy:slowMovers', userId, dayThreshold),
+    profitableVariants: (userId: number) => ipcRenderer.invoke('db:economy:profitableVariants', userId),
+  },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),

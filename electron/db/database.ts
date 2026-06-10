@@ -724,6 +724,132 @@ export const getSalesLogByRange = (userId: number, startDate: string, endDate: s
   );
 };
 
+const economyDateClause = (alias: string, startDate?: string, endDate?: string) => {
+  return startDate && endDate ? `AND ${alias}.sold_at BETWEEN ? AND ?` : '';
+};
+
+const economyParams = (userId: number, limitOrStart?: number | string, startOrEnd?: string, maybeEnd?: string) => {
+  if (typeof limitOrStart === 'number') {
+    return startOrEnd && maybeEnd ? [userId, startOrEnd, maybeEnd, limitOrStart] : [userId, limitOrStart];
+  }
+  return limitOrStart && startOrEnd ? [userId, limitOrStart, startOrEnd] : [userId];
+};
+
+export const getEconomyTopProducts = (userId: number, limit = 20, startDate?: string, endDate?: string) => {
+  return all(
+    `
+      SELECT
+        p.id, p.name, p.category, p.sell_price, p.cost_price,
+        COALESCE(SUM(s.quantity), 0) as units_sold,
+        COALESCE(SUM(s.total), 0) as revenue,
+        COALESCE(SUM(s.total - (s.quantity * p.cost_price)), 0) as profit,
+        COUNT(DISTINCT s.id) as transaction_count
+      FROM sales s
+      JOIN product_variants v ON s.variant_id = v.id
+      JOIN products p ON v.product_id = p.id
+      WHERE p.user_id = ? ${economyDateClause('s', startDate, endDate)}
+      GROUP BY p.id
+      ORDER BY revenue DESC
+      LIMIT ?
+    `,
+    economyParams(userId, limit, startDate, endDate),
+  );
+};
+
+export const getEconomyTopBuyers = (userId: number, limit = 20, startDate?: string, endDate?: string) => {
+  if (startDate && endDate) {
+    return all(
+      `
+        SELECT
+          b.id, b.name,
+          COUNT(s.id) as total_purchases,
+          COALESCE(SUM(s.total), 0) as total_spent,
+          MAX(s.sold_at) as last_purchase,
+          COALESCE(SUM(s.total) / NULLIF(COUNT(s.id), 0), 0) as avg_order_value
+        FROM sales s
+        JOIN buyers b ON b.user_id = s.user_id AND b.name = s.buyer_name
+        WHERE s.user_id = ? AND s.buyer_name IS NOT NULL AND s.sold_at BETWEEN ? AND ?
+        GROUP BY b.id, b.name
+        ORDER BY total_spent DESC
+        LIMIT ?
+      `,
+      [userId, startDate, endDate, limit],
+    );
+  }
+
+  return all(
+    `
+      SELECT
+        id, name, total_purchases, total_spent, last_purchase,
+        (total_spent / NULLIF(total_purchases, 0)) as avg_order_value
+      FROM buyers
+      WHERE user_id = ?
+      ORDER BY total_spent DESC
+      LIMIT ?
+    `,
+    [userId, limit],
+  );
+};
+
+export const getEconomyCategoryPerformance = (userId: number, startDate?: string, endDate?: string) => {
+  return all(
+    `
+      SELECT
+        p.category,
+        COUNT(DISTINCT p.id) as product_count,
+        COALESCE(SUM(s.quantity), 0) as units_sold,
+        COALESCE(SUM(s.total), 0) as revenue,
+        COALESCE(SUM(s.total - (s.quantity * p.cost_price)), 0) as profit,
+        COALESCE(AVG(p.sell_price - p.cost_price), 0) as avg_margin
+      FROM sales s
+      JOIN product_variants v ON s.variant_id = v.id
+      JOIN products p ON v.product_id = p.id
+      WHERE p.user_id = ? ${economyDateClause('s', startDate, endDate)}
+      GROUP BY p.category
+      ORDER BY revenue DESC
+    `,
+    economyParams(userId, startDate, endDate),
+  );
+};
+
+export const getEconomySlowMovers = (userId: number, dayThreshold = 30) => {
+  return all(
+    `
+      SELECT
+        p.id, p.name, p.category,
+        MAX(s.sold_at) as last_sale,
+        COALESCE(SUM(st.quantity), 0) as current_stock,
+        COALESCE(SUM(st.quantity * p.cost_price), 0) as tied_capital
+      FROM products p
+      JOIN product_variants v ON p.id = v.product_id
+      JOIN stock st ON v.id = st.variant_id
+      LEFT JOIN sales s ON v.id = s.variant_id
+      WHERE p.user_id = ? AND p.is_archived = 0
+      GROUP BY p.id
+      HAVING current_stock > 0 AND (last_sale IS NULL OR last_sale < datetime('now', ?))
+      ORDER BY tied_capital DESC
+    `,
+    [userId, `-${dayThreshold} days`],
+  );
+};
+
+export const getEconomyProfitableVariants = (userId: number) => {
+  return all(
+    `
+      SELECT
+        v.id as variant_id, v.sku, v.attributes,
+        p.id as product_id, p.name, p.category, p.sell_price, p.cost_price,
+        CASE WHEN p.cost_price = 0 THEN 0 ELSE ((p.sell_price - p.cost_price) / p.cost_price) * 100 END as margin_percent,
+        (p.sell_price - p.cost_price) as profit_per_unit
+      FROM product_variants v
+      JOIN products p ON v.product_id = p.id
+      WHERE p.user_id = ? AND p.is_archived = 0
+      ORDER BY margin_percent DESC
+    `,
+    [userId],
+  );
+};
+
 export const getArchives = (limit = 50, offset = 0) => {
   return all('SELECT * FROM archives ORDER BY archived_at DESC LIMIT ? OFFSET ?', [limit, offset]);
 };

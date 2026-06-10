@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { ToastProvider } from '@/components/ui/Toast';
 import { DashboardPage } from '@/routes/DashboardPage';
 import { Dev } from '@/routes/Dev';
+import { EconomyPage } from '@/routes/EconomyPage';
 import { ForgotPasswordPage } from '@/routes/ForgotPasswordPage';
 import { LoginPage } from '@/routes/LoginPage';
 import { Page } from '@/routes/Page';
@@ -30,7 +31,7 @@ export const App = () => {
             <Route path="/stock" element={<StockPage />} />
             <Route path="/scan" element={<ScannerPage />} />
             <Route path="/reporting" element={<ReportingPage />} />
-            <Route path="/economy" element={<Page title="Economy" />} />
+            <Route path="/economy" element={<EconomyPage />} />
             <Route path="/profile" element={<Page title="Profile" />} />
             <Route path="/settings" element={<Page title="Settings" />} />
             <Route path="/contact" element={<Page title="Contact" />} />
