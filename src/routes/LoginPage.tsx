@@ -79,7 +79,7 @@ export const LoginPage = () => {
     setError('');
 
     try {
-      const row = await window.api.db.get<PasswordRow>('SELECT password_hash FROM users WHERE id = ?', [selectedUser.id]);
+      const row = (await window.api.db.get('SELECT password_hash FROM users WHERE id = ?', [selectedUser.id])) as PasswordRow | undefined;
       const isValid = row?.password_hash ? await compare(password, row.password_hash) : false;
 
       if (!isValid) {
