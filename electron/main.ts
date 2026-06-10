@@ -1,6 +1,38 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { join } from 'node:path';
-import { initDatabase, run, get, all } from './db/database';
+import {
+  addVariantQuantity,
+  all,
+  createProduct,
+  createUser,
+  deleteProduct,
+  get,
+  getAllStock,
+  getAllUsers,
+  getArchives,
+  getCategoryTemplates,
+  getDailySummary,
+  getLowStock,
+  getProductById,
+  getProducts,
+  getRecentSales,
+  getSalesByRange,
+  getSetting,
+  getTopBuyers,
+  getTopProducts,
+  getUserById,
+  getVariantBySku,
+  getVariantsByProduct,
+  getWeeklySummary,
+  initDatabase,
+  recordSale,
+  restoreArchive,
+  run,
+  setSetting,
+  updateProduct,
+  updateUserPassword,
+  updateUserSettings,
+} from './db/database';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -31,6 +63,33 @@ const registerIpcHandlers = (): void => {
   ipcMain.handle('db:run', (_event, sql: string, params = []) => run(sql, params));
   ipcMain.handle('db:get', (_event, sql: string, params = []) => get(sql, params));
   ipcMain.handle('db:all', (_event, sql: string, params = []) => all(sql, params));
+  ipcMain.handle('db:users:getAll', () => getAllUsers());
+  ipcMain.handle('db:users:getById', (_event, id: number) => getUserById(id));
+  ipcMain.handle('db:users:create', (_event, input) => createUser(input));
+  ipcMain.handle('db:users:updatePassword', (_event, userId: number, passwordHash: string) => updateUserPassword(userId, passwordHash));
+  ipcMain.handle('db:users:updateSettings', (_event, userId: number, input) => updateUserSettings(userId, input));
+  ipcMain.handle('db:products:getAll', (_event, filter) => getProducts(filter));
+  ipcMain.handle('db:products:getById', (_event, productId: number) => getProductById(productId));
+  ipcMain.handle('db:products:create', (_event, input) => createProduct(input));
+  ipcMain.handle('db:products:update', (_event, productId: number, input) => updateProduct(productId, input));
+  ipcMain.handle('db:products:delete', (_event, productId: number, deletedBy: number, reason?: string) => deleteProduct(productId, deletedBy, reason));
+  ipcMain.handle('db:variants:getBySku', (_event, sku: string) => getVariantBySku(sku));
+  ipcMain.handle('db:variants:getByProduct', (_event, productId: number) => getVariantsByProduct(productId));
+  ipcMain.handle('db:variants:addQty', (_event, variantId: number, userId: number, quantity: number, note?: string) => addVariantQuantity(variantId, userId, quantity, note));
+  ipcMain.handle('db:sales:record', (_event, input) => recordSale(input));
+  ipcMain.handle('db:sales:getRecent', (_event, limit?: number) => getRecentSales(limit));
+  ipcMain.handle('db:sales:getByRange', (_event, from: string, to: string) => getSalesByRange(from, to));
+  ipcMain.handle('db:stock:getAll', () => getAllStock());
+  ipcMain.handle('db:stock:getLow', () => getLowStock());
+  ipcMain.handle('db:reports:dailySummary', (_event, from?: string, to?: string) => getDailySummary(from, to));
+  ipcMain.handle('db:reports:weeklySummary', (_event, from?: string, to?: string) => getWeeklySummary(from, to));
+  ipcMain.handle('db:reports:topProducts', (_event, limit?: number) => getTopProducts(limit));
+  ipcMain.handle('db:reports:topBuyers', (_event, limit?: number) => getTopBuyers(limit));
+  ipcMain.handle('db:archives:getAll', (_event, limit?: number, offset?: number) => getArchives(limit, offset));
+  ipcMain.handle('db:archives:restore', (_event, archiveId: number) => restoreArchive(archiveId));
+  ipcMain.handle('db:settings:get', (_event, userId: number, key: string) => getSetting(userId, key));
+  ipcMain.handle('db:settings:set', (_event, userId: number, key: string, value: string) => setSetting(userId, key, value));
+  ipcMain.handle('db:categoryTemplates:getAll', () => getCategoryTemplates());
 
   ipcMain.handle('window:minimize', () => {
     BrowserWindow.getFocusedWindow()?.minimize();

@@ -62,7 +62,7 @@ export const Sidebar = () => {
         <div className="user-avatar">{user?.name.charAt(0) ?? 'U'}</div>
         <div className="user-meta">
           <span>{user?.name ?? 'Guest'}</span>
-          <small>{user?.type ?? 'signed out'}</small>
+          <small>{user?.businessType ?? 'signed out'}</small>
         </div>
         <button className="icon-button" type="button" aria-label="Logout" onClick={logout}>
           <LogOut size={16} />
