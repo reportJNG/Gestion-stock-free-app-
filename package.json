@@ -19,6 +19,7 @@
     "better-sqlite3": "latest",
     "clsx": "latest",
     "electron-vite": "latest",
+    "html5-qrcode": "^2.3.8",
     "lucide-react": "latest",
     "qrcode": "^1.5.4",
     "react": "latest",

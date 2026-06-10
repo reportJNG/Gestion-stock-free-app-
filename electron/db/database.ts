@@ -483,7 +483,22 @@ export const recordSale = (input: RecordSaleInput) => {
       [input.variantId, input.userId, quantity, unitPrice, total, input.buyerName],
     );
 
-    applyStockMovement(input.variantId, input.userId, 'sale', -quantity, input.buyerName, input.note ?? '');
+    const stock = get<{ quantity: number }>('SELECT quantity FROM stock WHERE variant_id = ?', [input.variantId]);
+    if (!stock) {
+      throw new Error(`Stock row not found for variant ${input.variantId}`);
+    }
+    const quantityBefore = stock.quantity;
+    const quantityAfter = quantityBefore - quantity;
+    run('UPDATE stock SET quantity = ?, updated_at = datetime(\'now\') WHERE variant_id = ?', [quantityAfter, input.variantId]);
+    run(
+      `
+        INSERT INTO stock_movements (
+          variant_id, user_id, type, quantity_delta, quantity_before, quantity_after, buyer_name, note
+        )
+        VALUES (?, ?, 'sale', ?, ?, ?, ?, ?)
+      `,
+      [input.variantId, input.userId, -quantity, quantityBefore, quantityAfter, input.buyerName, input.note ?? ''],
+    );
 
     if (input.buyerName?.trim()) {
       run(
