@@ -40,6 +40,12 @@ const api = {
       weeklySummary: (from?: string, to?: string) => ipcRenderer.invoke('db:reports:weeklySummary', from, to),
       topProducts: (limit?: number) => ipcRenderer.invoke('db:reports:topProducts', limit),
       topBuyers: (limit?: number) => ipcRenderer.invoke('db:reports:topBuyers', limit),
+      summaryByRange: (userId: number, start: string, end: string) => ipcRenderer.invoke('db:reports:summaryByRange', userId, start, end),
+      hourlyPattern: (userId: number, start: string, end: string) => ipcRenderer.invoke('db:reports:hourlyPattern', userId, start, end),
+      categoryBreakdown: (userId: number, start: string, end: string) => ipcRenderer.invoke('db:reports:categoryBreakdown', userId, start, end),
+      periodComparison: (userId: number, currentStart: string, currentEnd: string, prevStart: string, prevEnd: string) =>
+        ipcRenderer.invoke('db:reports:periodComparison', userId, currentStart, currentEnd, prevStart, prevEnd),
+      salesLog: (userId: number, start: string, end: string) => ipcRenderer.invoke('db:reports:salesLog', userId, start, end),
     },
     archives: {
       getAll: (limit?: number, offset?: number) => ipcRenderer.invoke('db:archives:getAll', limit, offset),

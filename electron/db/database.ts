@@ -645,6 +645,85 @@ export const getTopBuyers = (limit = 10) => {
   return all('SELECT * FROM buyers ORDER BY total_spent DESC LIMIT ?', [limit]);
 };
 
+export const getSummaryByRange = (userId: number, startDate: string, endDate: string) => {
+  return all(
+    `
+      SELECT
+        DATE(s.sold_at) as day,
+        COUNT(*) as total_sales,
+        COALESCE(SUM(s.quantity), 0) as total_units,
+        COALESCE(SUM(s.total), 0) as revenue,
+        COALESCE(SUM(s.total - (s.quantity * p.cost_price)), 0) as profit,
+        COUNT(DISTINCT p.id) as unique_products
+      FROM sales s
+      JOIN product_variants v ON s.variant_id = v.id
+      JOIN products p ON v.product_id = p.id
+      WHERE s.user_id = ? AND s.sold_at BETWEEN ? AND ?
+      GROUP BY day
+      ORDER BY day ASC
+    `,
+    [userId, startDate, endDate],
+  );
+};
+
+export const getHourlyPattern = (userId: number, startDate: string, endDate: string) => {
+  return all(
+    `
+      SELECT CAST(strftime('%H', sold_at) AS INTEGER) as hour, COUNT(*) as sales_count
+      FROM sales
+      WHERE user_id = ? AND sold_at BETWEEN ? AND ?
+      GROUP BY hour
+      ORDER BY hour ASC
+    `,
+    [userId, startDate, endDate],
+  );
+};
+
+export const getCategoryBreakdown = (userId: number, startDate: string, endDate: string) => {
+  return all(
+    `
+      SELECT p.category, COUNT(*) as sales_count, COALESCE(SUM(s.total), 0) as revenue, COALESCE(SUM(s.quantity), 0) as units
+      FROM sales s
+      JOIN product_variants v ON s.variant_id = v.id
+      JOIN products p ON v.product_id = p.id
+      WHERE p.user_id = ? AND s.sold_at BETWEEN ? AND ?
+      GROUP BY p.category
+      ORDER BY revenue DESC
+    `,
+    [userId, startDate, endDate],
+  );
+};
+
+export const getPeriodComparison = (
+  userId: number,
+  currentStart: string,
+  currentEnd: string,
+  prevStart: string,
+  prevEnd: string,
+) => {
+  const current = getSummaryByRange(userId, currentStart, currentEnd);
+  const previous = getSummaryByRange(userId, prevStart, prevEnd);
+  return { current, previous };
+};
+
+export const getSalesLogByRange = (userId: number, startDate: string, endDate: string) => {
+  return all(
+    `
+      SELECT
+        s.*,
+        p.name AS product_name,
+        v.attributes,
+        v.sku
+      FROM sales s
+      JOIN product_variants v ON s.variant_id = v.id
+      JOIN products p ON v.product_id = p.id
+      WHERE s.user_id = ? AND s.sold_at BETWEEN ? AND ?
+      ORDER BY s.sold_at DESC
+    `,
+    [userId, startDate, endDate],
+  );
+};
+
 export const getArchives = (limit = 50, offset = 0) => {
   return all('SELECT * FROM archives ORDER BY archived_at DESC LIMIT ? OFFSET ?', [limit, offset]);
 };

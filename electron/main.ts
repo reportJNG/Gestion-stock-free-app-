@@ -22,6 +22,11 @@ import {
   getSetting,
   getTopBuyers,
   getTopProducts,
+  getSummaryByRange,
+  getHourlyPattern,
+  getCategoryBreakdown,
+  getPeriodComparison,
+  getSalesLogByRange,
   getUserById,
   getVariantBySku,
   getVariantsByProduct,
@@ -97,6 +102,13 @@ const registerIpcHandlers = (): void => {
   ipcMain.handle('db:reports:weeklySummary', (_event, from?: string, to?: string) => getWeeklySummary(from, to));
   ipcMain.handle('db:reports:topProducts', (_event, limit?: number) => getTopProducts(limit));
   ipcMain.handle('db:reports:topBuyers', (_event, limit?: number) => getTopBuyers(limit));
+  ipcMain.handle('db:reports:summaryByRange', (_event, userId: number, start: string, end: string) => getSummaryByRange(userId, start, end));
+  ipcMain.handle('db:reports:hourlyPattern', (_event, userId: number, start: string, end: string) => getHourlyPattern(userId, start, end));
+  ipcMain.handle('db:reports:categoryBreakdown', (_event, userId: number, start: string, end: string) => getCategoryBreakdown(userId, start, end));
+  ipcMain.handle('db:reports:periodComparison', (_event, userId: number, currentStart: string, currentEnd: string, prevStart: string, prevEnd: string) =>
+    getPeriodComparison(userId, currentStart, currentEnd, prevStart, prevEnd),
+  );
+  ipcMain.handle('db:reports:salesLog', (_event, userId: number, start: string, end: string) => getSalesLogByRange(userId, start, end));
   ipcMain.handle('db:archives:getAll', (_event, limit?: number, offset?: number) => getArchives(limit, offset));
   ipcMain.handle('db:archives:restore', (_event, archiveId: number) => restoreArchive(archiveId));
   ipcMain.handle('db:settings:get', (_event, userId: number, key: string) => getSetting(userId, key));

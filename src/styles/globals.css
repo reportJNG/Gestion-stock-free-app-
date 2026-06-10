@@ -1767,6 +1767,135 @@ a {
   text-align: center;
 }
 
+.reports-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.reports-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.reports-header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.period-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.period-tabs button {
+  border: 1px solid var(--border-normal);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--space-2) var(--space-4);
+}
+
+.period-tabs .period-active {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+
+.custom-range {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.custom-range input {
+  border: 1px solid var(--border-normal);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  padding: var(--space-3);
+}
+
+.report-panel {
+  padding: var(--space-6);
+}
+
+.report-panel h2 {
+  margin: 0 0 var(--space-5);
+  font-size: 18px;
+}
+
+.report-chart-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.report-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border: 1px solid var(--border-normal);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-md);
+  padding: 10px 14px;
+}
+
+.chart-empty {
+  display: grid;
+  min-height: 280px;
+  place-items: center;
+  border: 1px dashed var(--border-normal);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+}
+
+.category-legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-3);
+  text-align: left;
+}
+
+.pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.reports-empty {
+  display: grid;
+  min-height: 520px;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-4);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.reports-empty h2 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
 @media (max-width: 980px) {
   .scanner-page {
     grid-template-columns: 1fr;
