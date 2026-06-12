@@ -9,7 +9,9 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/run-electron-vite.cjs dev",
-    "build": "node scripts/run-electron-vite.cjs build && electron-builder",
+    "build:app": "node scripts/run-electron-vite.cjs build",
+    "build:win": "npm run build:app && electron-builder --win --x64 --config electron-builder.yml",
+    "build": "npm run build:win",
     "preview": "node scripts/run-electron-vite.cjs preview",
     "typecheck": "tsc --noEmit"
   },

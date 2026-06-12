@@ -3,7 +3,8 @@ productName: StockFlow
 copyright: Copyright 2026 StockFlow
 
 directories:
-  output: release
+  output: dist
+  buildResources: build
 
 files:
   - out/**
@@ -13,16 +14,34 @@ extraResources:
   - from: public/icon.png
     to: icon.png
 
+asar: true
+
+# Auto-update is intentionally disabled until a publish provider is configured.
+publish: null
+
 win:
-  target: nsis
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
   icon: public/icon.png
   requestedExecutionLevel: asInvoker
+  artifactName: ${productName}.${ext}
 
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-  installerIcon: public/icon.png
+  allowElevation: true
+  perMachine: false
   shortcutName: StockFlow
+  artifactName: ${productName} Setup.${ext}
+  uninstallDisplayName: StockFlow
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  runAfterFinish: true
 
 mac:
   target: dmg
