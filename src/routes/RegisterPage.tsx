@@ -15,6 +15,7 @@ import {
   UtensilsCrossed,
   type LucideIcon,
 } from 'lucide-react';
+import { AuthBranding } from '@/components/auth/AuthBranding';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
@@ -119,24 +120,7 @@ export const RegisterPage = () => {
   return (
     <main className="auth-screen">
       <section className="auth-panel register-panel">
-        <aside className="auth-branding">
-          <div>
-            <div className="auth-mark" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            <h1>StockFlow</h1>
-            <p>Manage smarter.</p>
-          </div>
-          <small>v0.1.0</small>
-        </aside>
+        <AuthBranding />
 
         <form className="auth-form-zone auth-phase phase-active" onSubmit={handleSubmit}>
           <div>

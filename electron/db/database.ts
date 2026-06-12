@@ -422,16 +422,16 @@ export const deleteProduct = (productId: number, deletedBy: number, reason = '')
   return remove();
 };
 
-export const getVariantBySku = (sku: string) => {
+export const getVariantBySku = (sku: string, userId: number) => {
   return get(
     `
-      SELECT v.*, p.name AS product_name, p.sell_price, COALESCE(s.quantity, 0) AS quantity
+      SELECT v.*, p.name AS product_name, p.category, p.low_stock_threshold, p.sell_price, COALESCE(s.quantity, 0) AS quantity
       FROM product_variants v
       JOIN products p ON p.id = v.product_id
       LEFT JOIN stock s ON s.variant_id = v.id
-      WHERE v.sku = ?
+      WHERE v.sku = ? AND p.user_id = ?
     `,
-    [sku],
+    [sku, userId],
   );
 };
 
@@ -552,7 +552,7 @@ export const recordSale = (input: RecordSaleInput) => {
   return record();
 };
 
-export const getRecentSales = (limit = 20) => {
+export const getRecentSales = (userId: number, limit = 20) => {
   return all(
     `
       SELECT
@@ -565,10 +565,11 @@ export const getRecentSales = (limit = 20) => {
       FROM sales s
       JOIN product_variants v ON v.id = s.variant_id
       JOIN products p ON p.id = v.product_id
+      WHERE s.user_id = ?
       ORDER BY s.sold_at DESC
       LIMIT ?
     `,
-    [limit],
+    [userId, limit],
   );
 };
 
@@ -576,8 +577,9 @@ export const getSalesByRange = (from: string, to: string) => {
   return all('SELECT * FROM sales WHERE sold_at BETWEEN ? AND ? ORDER BY sold_at DESC', [from, to]);
 };
 
-export const getAllStock = () => {
-  return all(`
+export const getAllStock = (userId: number) => {
+  return all(
+    `
     SELECT
       v.id AS variant_id,
       p.id AS product_id,
@@ -594,13 +596,16 @@ export const getAllStock = () => {
     FROM product_variants v
     JOIN products p ON p.id = v.product_id
     LEFT JOIN stock s ON s.variant_id = v.id
-    WHERE p.is_archived = 0
+    WHERE p.user_id = ? AND p.is_archived = 0
     ORDER BY p.name ASC, v.id ASC
-  `);
+  `,
+    [userId],
+  );
 };
 
-export const getLowStock = () => {
-  return all(`
+export const getLowStock = (userId: number) => {
+  return all(
+    `
     SELECT
       v.id AS variant_id,
       p.id AS product_id,
@@ -617,9 +622,11 @@ export const getLowStock = () => {
     FROM product_variants v
     JOIN products p ON p.id = v.product_id
     LEFT JOIN stock s ON s.variant_id = v.id
-    WHERE p.is_archived = 0 AND COALESCE(s.quantity, 0) <= p.low_stock_threshold
+    WHERE p.user_id = ? AND p.is_archived = 0 AND COALESCE(s.quantity, 0) <= p.low_stock_threshold
     ORDER BY s.quantity ASC
-  `);
+  `,
+    [userId],
+  );
 };
 
 export const getDailySummary = (from?: string, to?: string) => {

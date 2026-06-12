@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { compare } from "bcryptjs";
 import { Eye, EyeOff, Plus } from "lucide-react";
 
+import { AuthBranding } from "@/components/auth/AuthBranding";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -19,7 +20,7 @@ interface PasswordRow {
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
 
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -35,6 +36,12 @@ export const LoginPage = () => {
 
   const [error, setError] = useState("");
   const [attempts, setAttempts] = useState(0);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/home", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   /* -------------------- Load Users -------------------- */
   useEffect(() => {
@@ -100,10 +107,10 @@ export const LoginPage = () => {
     setError("");
 
     try {
-      const row = await window.api.db.get<PasswordRow>(
+      const row = (await window.api.db.get(
         "SELECT password_hash FROM users WHERE id = ?",
         [selectedUser.id],
-      );
+      )) as PasswordRow | null;
 
       const isValid =
         row?.password_hash && (await compare(password, row.password_hash));
@@ -129,20 +136,7 @@ export const LoginPage = () => {
   return (
     <main className="auth-screen">
       <section className="auth-panel">
-        {/* Branding */}
-        <aside className="auth-branding">
-          <div>
-            <div className="auth-mark" aria-hidden="true">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <span key={i} />
-              ))}
-            </div>
-
-            <h1>StockFlow</h1>
-            <p>Manage smarter.</p>
-          </div>
-          <small>v0.1.0</small>
-        </aside>
+        <AuthBranding />
 
         {/* Content */}
         <section className={`auth-form-zone ${phase}`}>

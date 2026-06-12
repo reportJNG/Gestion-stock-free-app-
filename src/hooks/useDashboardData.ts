@@ -193,12 +193,12 @@ export const useDashboardData = (user: User | null) => {
 
       try {
         const [lowRows, saleRows, dailyRows, weeklyRows, products, stockRows] = await Promise.all([
-          window.api.db.stock.getLow() as Promise<StockRow[]>,
-          window.api.db.sales.getRecent(10) as Promise<SaleRow[]>,
+          window.api.db.stock.getLow(user.id) as Promise<StockRow[]>,
+          window.api.db.sales.getRecent(user.id, 10) as Promise<SaleRow[]>,
           window.api.db.reports.dailySummary(formatSqlDate(dayStart(yesterday)), formatSqlDate(dayEnd(today))) as Promise<SummaryRow[]>,
           window.api.db.reports.dailySummary(formatSqlDate(dayStart(weekStart)), formatSqlDate(dayEnd(today))) as Promise<SummaryRow[]>,
           window.api.db.products.getAll({ userId: user.id, limit: 100000, offset: 0 }) as Promise<ProductRow[]>,
-          window.api.db.stock.getAll() as Promise<StockRow[]>,
+          window.api.db.stock.getAll(user.id) as Promise<StockRow[]>,
         ]);
 
         const todayKey = toDateKey(today);

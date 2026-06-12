@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/store/AuthContext';
 import { parseAttributes } from '@/utils/productUtils';
 
 export type StockStatusFilter = 'all' | 'in' | 'low' | 'out';
@@ -56,20 +57,26 @@ const statusOf = (row: StockRow): StockStatusFilter => {
 };
 
 export const useStock = (search: string, status: StockStatusFilter, category: string, sort: StockSort) => {
+  const { user } = useAuth();
   const [allRows, setAllRows] = useState<StockRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const pageSize = 25;
 
   const refetch = useCallback(async () => {
+    if (!user) {
+      setAllRows([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
-      const rows = (await window.api.db.stock.getAll()) as DbStockRow[];
+      const rows = (await window.api.db.stock.getAll(user.id)) as DbStockRow[];
       setAllRows(rows.map(mapRow));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     void refetch();

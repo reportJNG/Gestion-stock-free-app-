@@ -10,8 +10,9 @@ const titles: Record<string, string> = {
   '/economy': 'Economy',
   '/profile': 'Profile',
   '/settings': 'Settings',
-  '/contact': 'Contact',
-  '/dev': 'Developer Tools',
+  '/archives': 'Archives',
+  '/workers': 'Workers',
+  '/about': 'About',
 };
 
 export const TopBar = () => {

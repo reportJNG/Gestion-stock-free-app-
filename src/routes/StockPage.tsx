@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, ArrowDown, ArrowUp, Download, PackageMinus, PackagePlus, QrCode, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AlertTriangle, ArrowDown, ArrowUp, Download, PackagePlus, X } from 'lucide-react';
+import { StockRow } from '@/components/stock/StockRow';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useSearchParams } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { useStock, type StockRow, type StockSort, type StockStatusFilter } from '@/hooks/useStock';
+import { useStock, type StockRow as StockRowData, type StockSort, type StockStatusFilter } from '@/hooks/useStock';
 import { useStockAdjust } from '@/hooks/useStockAdjust';
-import { money, stockStatus, variantLabel } from '@/utils/productUtils';
+import { variantLabel } from '@/utils/productUtils';
 
 interface MovementRow {
   id: number;
@@ -41,11 +43,11 @@ export const StockPage = () => {
   const [status, setStatus] = useState<StockStatusFilter>((searchParams.get('filter') === 'low' ? 'low' : 'all') as StockStatusFilter);
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<StockSort>('name');
-  const [edit, setEdit] = useState<{ row: StockRow; direction: 1 | -1 } | null>(null);
+  const [edit, setEdit] = useState<{ row: StockRowData; direction: 1 | -1 } | null>(null);
   const [qty, setQty] = useState(1);
   const [note, setNote] = useState('');
-  const [qrRow, setQrRow] = useState<StockRow | null>(null);
-  const [historyRow, setHistoryRow] = useState<StockRow | null>(null);
+  const [qrRow, setQrRow] = useState<StockRowData | null>(null);
+  const [historyRow, setHistoryRow] = useState<StockRowData | null>(null);
   const [movements, setMovements] = useState<MovementRow[]>([]);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkQty, setBulkQty] = useState<Record<number, number>>({});
@@ -96,6 +98,12 @@ export const StockPage = () => {
     const csv = [header.map(csvEscape).join(','), ...body].join('\n');
     await window.api.file.saveCsv(`stockflow-stock-${new Date().toISOString().slice(0, 10)}.csv`, csv);
   };
+
+  const handleStartEdit = useCallback((row: StockRowData, direction: 1 | -1) => {
+    setEdit({ row, direction });
+    setQty(1);
+    setNote('');
+  }, []);
 
   const applyBulk = async () => {
     let count = 0;
@@ -148,36 +156,33 @@ export const StockPage = () => {
         </select>
       </div>
 
+      {isLoading ? <Skeleton.Table rows={8} /> : null}
+
       <div className="stock-table-wrap">
         <table className="stock-table">
           <thead><tr><th>Product</th><th>Variant</th><th>SKU</th><th>Stock</th><th>Value</th><th>Last Updated</th><th>Actions</th></tr></thead>
           <tbody>
-            {isLoading ? <tr><td colSpan={7}>Loading stock...</td></tr> : rows.map((row) => {
-              const statusInfo = stockStatus(row.quantity, row.lowStockThreshold);
-              return (
-                <tr key={row.variantId} ref={(node) => { rowRefs.current[String(row.variantId)] = node; }} className={String(row.variantId) === highlightId ? 'row-highlight' : ''}>
-                  <td><strong>{row.productName}</strong><Badge>{row.category}</Badge></td>
-                  <td>{variantLabel(row.attributes)}</td>
-                  <td><button className="sku-copy" type="button" onClick={() => navigator.clipboard.writeText(row.sku)}>{row.sku}</button></td>
-                  <td>
-                    {edit?.row.variantId === row.variantId ? (
-                      <div className="stock-inline-form">
-                        <div><button type="button" onClick={() => setQty(Math.max(1, qty - 1))}>-</button><input value={qty} type="number" min={1} onChange={(event) => setQty(Number(event.target.value))} /><button type="button" onClick={() => setQty(qty + 1)}>+</button></div>
-                        <input placeholder="Optional note (reason, batch...)" value={note} onChange={(event) => setNote(event.target.value)} />
-                        <span>{error}</span>
-                        <Button size="sm" type="button" loading={isAdjusting} onClick={confirmAdjust}>Confirm</Button>
-                        <Button size="sm" variant="ghost" type="button" onClick={() => setEdit(null)}>Cancel</Button>
-                      </div>
-                    ) : (
-                      <div className={`stock-number stock-${statusInfo.variant}`}><strong>{row.quantity}</strong>{statusInfo.variant !== 'ok' ? <Badge variant={statusInfo.variant}>{statusInfo.label === 'Out of Stock' ? 'Out' : 'Low'}</Badge> : null}</div>
-                    )}
-                  </td>
-                  <td>{money(row.quantity * row.costPrice)}</td>
-                  <td><button className="last-updated" type="button" onClick={() => setHistoryRow(row)}>{relative(row.lastUpdated)}</button></td>
-                  <td><div className="row-actions"><Button variant="ghost" size="sm" type="button" onClick={() => setEdit({ row, direction: 1 })}><PackagePlus size={15} /></Button><Button variant="ghost" size="sm" type="button" onClick={() => setEdit({ row, direction: -1 })}><PackageMinus size={15} /></Button><Button variant="ghost" size="sm" type="button" onClick={() => setQrRow(row)}><QrCode size={15} /></Button></div></td>
-                </tr>
-              );
-            })}
+            {!isLoading ? rows.map((row) => (
+              <StockRow
+                key={row.variantId}
+                row={row}
+                highlightId={highlightId}
+                editVariantId={edit?.row.variantId ?? null}
+                qty={qty}
+                note={note}
+                error={error}
+                isAdjusting={isAdjusting}
+                rowRef={(node) => { rowRefs.current[String(row.variantId)] = node; }}
+                onQtyChange={setQty}
+                onNoteChange={setNote}
+                onStartEdit={handleStartEdit}
+                onCancelEdit={() => setEdit(null)}
+                onConfirmAdjust={() => void confirmAdjust()}
+                onShowQr={setQrRow}
+                onShowHistory={setHistoryRow}
+                relative={relative}
+              />
+            )) : null}
           </tbody>
         </table>
       </div>

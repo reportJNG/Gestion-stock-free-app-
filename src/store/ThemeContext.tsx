@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, type ReactNode } from 'react';
+import { createContext, useEffect, type ReactNode } from 'react';
 
 const ThemeContext = createContext({ theme: 'dark' as const });
 
@@ -9,5 +9,3 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   return <ThemeContext.Provider value={{ theme: 'dark' }}>{children}</ThemeContext.Provider>;
 };
-
-export const useTheme = () => useContext(ThemeContext);

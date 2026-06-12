@@ -1,5 +1,10 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, screen, shell } from 'electron';
+import ElectronStoreImport from 'electron-store';
+
+// electron-store v11 is ESM-only; CJS require() exposes the class on `.default`
+const Store = (ElectronStoreImport as typeof ElectronStoreImport & { default: typeof ElectronStoreImport }).default;
 import { copyFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   addVariantQuantity,
@@ -51,6 +56,79 @@ import {
 
 let mainWindow: BrowserWindow | null = null;
 
+const resolveAppIcon = (): Electron.NativeImage | undefined => {
+  const candidates = app.isPackaged
+    ? [join(process.resourcesPath, 'icon.png')]
+    : [join(process.cwd(), 'public', 'icon.png')];
+
+  const iconPath = candidates.find((path) => existsSync(path));
+  if (!iconPath) {
+    return undefined;
+  }
+
+  const image = nativeImage.createFromPath(iconPath);
+  return image.isEmpty() ? undefined : image;
+};
+
+interface WindowState {
+  width: number;
+  height: number;
+  x?: number;
+  y?: number;
+  isMaximized?: boolean;
+}
+
+const windowStore = new Store<{ windowState: WindowState }>({
+  name: 'stockflow-window',
+  defaults: {
+    windowState: { width: 1280, height: 800 },
+  },
+});
+
+const getSavedWindowBounds = (): WindowState => {
+  const saved = windowStore.get('windowState');
+  if (saved.x === undefined || saved.y === undefined) {
+    return saved;
+  }
+
+  const onScreen = screen.getAllDisplays().some((display) => {
+    const { x, y, width, height } = display.workArea;
+    return saved.x! >= x && saved.x! < x + width && saved.y! >= y && saved.y! < y + height;
+  });
+
+  if (!onScreen) {
+    return { width: saved.width, height: saved.height };
+  }
+
+  return saved;
+};
+
+let saveWindowStateTimer: ReturnType<typeof setTimeout> | null = null;
+
+const saveWindowState = (window: BrowserWindow): void => {
+  if (saveWindowStateTimer) {
+    clearTimeout(saveWindowStateTimer);
+  }
+
+  saveWindowStateTimer = setTimeout(() => {
+    const isMaximized = window.isMaximized();
+    const bounds = isMaximized ? window.getNormalBounds() : window.getBounds();
+    windowStore.set('windowState', {
+      width: bounds.width,
+      height: bounds.height,
+      x: bounds.x,
+      y: bounds.y,
+      isMaximized,
+    });
+  }, 500);
+};
+
+const attachWindowStateHandlers = (window: BrowserWindow): void => {
+  window.on('resize', () => saveWindowState(window));
+  window.on('move', () => saveWindowState(window));
+  window.on('close', () => saveWindowState(window));
+};
+
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch('disable-gpu');
 app.commandLine.appendSwitch('disable-gpu-compositing');
@@ -81,20 +159,40 @@ const loadRenderer = async (window: BrowserWindow): Promise<void> => {
 };
 
 const createWindow = async (): Promise<void> => {
+  const saved = getSavedWindowBounds();
+
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: saved.width,
+    height: saved.height,
+    x: saved.x,
+    y: saved.y,
     minWidth: 960,
     minHeight: 600,
     frame: false,
     transparent: false,
     backgroundColor: '#0a0a0a',
+    show: false,
+    icon: resolveAppIcon(),
     webPreferences: {
       preload: join(__dirname, '../preload/preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+
+  attachWindowStateHandlers(mainWindow);
+
+  if (saved.isMaximized) {
+    mainWindow.maximize();
+  }
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show();
+  });
+
+  if (process.env.VITE_DEV_TOOLS === 'true') {
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
+  }
 
   await loadRenderer(mainWindow);
 };
@@ -113,14 +211,14 @@ const registerIpcHandlers = (): void => {
   ipcMain.handle('db:products:create', (_event, input) => createProduct(input));
   ipcMain.handle('db:products:update', (_event, productId: number, input) => updateProduct(productId, input));
   ipcMain.handle('db:products:delete', (_event, productId: number, deletedBy: number, reason?: string) => deleteProduct(productId, deletedBy, reason));
-  ipcMain.handle('db:variants:getBySku', (_event, sku: string) => getVariantBySku(sku));
+  ipcMain.handle('db:variants:getBySku', (_event, sku: string, userId: number) => getVariantBySku(sku, userId));
   ipcMain.handle('db:variants:getByProduct', (_event, productId: number) => getVariantsByProduct(productId));
   ipcMain.handle('db:variants:addQty', (_event, variantId: number, userId: number, quantity: number, note?: string) => addVariantQuantity(variantId, userId, quantity, note));
   ipcMain.handle('db:sales:record', (_event, input) => recordSale(input));
-  ipcMain.handle('db:sales:getRecent', (_event, limit?: number) => getRecentSales(limit));
+  ipcMain.handle('db:sales:getRecent', (_event, userId: number, limit?: number) => getRecentSales(userId, limit));
   ipcMain.handle('db:sales:getByRange', (_event, from: string, to: string) => getSalesByRange(from, to));
-  ipcMain.handle('db:stock:getAll', () => getAllStock());
-  ipcMain.handle('db:stock:getLow', () => getLowStock());
+  ipcMain.handle('db:stock:getAll', (_event, userId: number) => getAllStock(userId));
+  ipcMain.handle('db:stock:getLow', (_event, userId: number) => getLowStock(userId));
   ipcMain.handle('db:stock:getMovements', (_event, variantId: number) => getStockMovements(variantId));
   ipcMain.handle('file:saveCsv', async (_event, filename: string, content: string) => {
     const result = await dialog.showSaveDialog({
@@ -195,6 +293,49 @@ const registerIpcHandlers = (): void => {
 
   ipcMain.handle('window:close', () => {
     BrowserWindow.getFocusedWindow()?.close();
+  });
+
+  ipcMain.handle('shell:open-external', (_event, url: string) => {
+    void shell.openExternal(url);
+  });
+
+  ipcMain.handle('shell:open-path', (_event, path: string) => {
+    void shell.openPath(path);
+  });
+
+  ipcMain.handle('print:label', async (_event, html: string) => {
+    const printWindow = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    });
+
+    await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+
+    await new Promise<void>((resolve) => {
+      printWindow.webContents.print({ silent: false, printBackground: true }, () => {
+        printWindow.close();
+        resolve();
+      });
+    });
+  });
+
+  ipcMain.handle('app:get-info', () => {
+    const platformLabels: Record<string, string> = {
+      win32: 'Windows',
+      darwin: 'macOS',
+      linux: 'Linux',
+    };
+    const userDataPath = app.getPath('userData');
+
+    return {
+      version: app.getVersion(),
+      platform: platformLabels[process.platform] ?? process.platform,
+      userDataPath,
+      dbPath: join(userDataPath, 'stockflow.db'),
+    };
   });
 };
 

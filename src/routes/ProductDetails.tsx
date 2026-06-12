@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useProduct } from '@/hooks/useProduct';
 import { useAuth } from '@/store/AuthContext';
 import { useToast } from '@/components/ui/Toast';
+import { printLabel } from '@/utils/printLabel';
 import { attributeText, categoryIcons, margin, money, parseAttributes, stockStatus, variantLabel, type ProductRow, type VariantRow } from '@/utils/productUtils';
 
 const fmtDate = (value?: string) => (value ? new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(value)) : '-');
@@ -129,18 +130,20 @@ export const ProductDetails = () => {
     navigate('/products');
   };
 
-  const printLabel = (variant: VariantRow) => {
-    const win = window.open('', '_blank', 'width=420,height=320');
-    if (!win) return;
-    win.document.write(`
-      <html><head><title>${product.name}</title><style>
-      body{font-family:Arial,sans-serif;color:#000;background:#fff;margin:0;padding:10mm}
-      .label{width:60mm;height:40mm;display:flex;gap:4mm;align-items:center}
-      img{width:28mm;height:28mm;background:#000}.name{font-weight:700}.sku{font-family:monospace;font-size:10px}
-      </style></head><body><div class="label"><img src="${variant.qr_code_data}"/><div><div class="name">${product.name}</div><div>${variantLabel(parseAttributes(variant.attributes))}</div><div class="sku">${variant.sku}</div></div></div></body></html>
-    `);
-    win.document.close();
-    win.print();
+  const handlePrintLabel = async (variant: VariantRow) => {
+    try {
+      await printLabel(
+        {
+          sku: variant.sku,
+          attributes: parseAttributes(variant.attributes),
+          qrCodeData: variant.qr_code_data,
+        },
+        { name: product.name },
+      );
+      notify({ title: 'Print dialog opened', variant: 'success' });
+    } catch {
+      notify({ title: 'Print failed', message: 'Could not open the print dialog.', variant: 'error' });
+    }
   };
 
   return (
@@ -170,7 +173,7 @@ export const ProductDetails = () => {
             Archive
           </Button>
           {variants[0] ? (
-            <Button variant="ghost" type="button" onClick={() => printLabel(variants[0])}>
+            <Button variant="ghost" type="button" onClick={() => void handlePrintLabel(variants[0])}>
               <Printer size={16} />
               Print Label
             </Button>
@@ -236,7 +239,7 @@ export const ProductDetails = () => {
                       <div className="row-actions">
                         <Button variant="ghost" size="sm" type="button" onClick={() => setStockEdit({ variantId: variant.id, direction: 1 })}><Plus size={14} /></Button>
                         <Button variant="ghost" size="sm" type="button" onClick={() => setStockEdit({ variantId: variant.id, direction: -1 })}><Minus size={14} /></Button>
-                        <Button variant="ghost" size="sm" type="button" onClick={() => printLabel(variant)}><Printer size={14} /></Button>
+                        <Button variant="ghost" size="sm" type="button" onClick={() => void handlePrintLabel(variant)}><Printer size={14} /></Button>
                       </div>
                       {stockEdit?.variantId === variant.id ? (
                         <div className="inline-stock-edit">
@@ -271,7 +274,7 @@ export const ProductDetails = () => {
             <img src={qrVariant.qr_code_data} alt={qrVariant.sku} />
             <code>{qrVariant.sku}</code>
             <div className="button-row">
-              <Button variant="secondary" type="button" onClick={() => printLabel(qrVariant)}>Print Label</Button>
+              <Button variant="secondary" type="button" onClick={() => void handlePrintLabel(qrVariant)}>Print Label</Button>
               <Button variant="ghost" type="button" onClick={() => navigator.clipboard.writeText(qrVariant.sku)}>Copy SKU</Button>
               <a className="button button-ghost button-md" href={qrVariant.qr_code_data} download={`${qrVariant.sku}.png`}>Download QR</a>
             </div>

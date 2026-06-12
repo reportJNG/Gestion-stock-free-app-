@@ -21,18 +21,18 @@ const api = {
       delete: (productId: number, deletedBy: number, reason?: string) => ipcRenderer.invoke('db:products:delete', productId, deletedBy, reason),
     },
     variants: {
-      getBySku: (sku: string) => ipcRenderer.invoke('db:variants:getBySku', sku),
+      getBySku: (sku: string, userId: number) => ipcRenderer.invoke('db:variants:getBySku', sku, userId),
       getByProduct: (productId: number) => ipcRenderer.invoke('db:variants:getByProduct', productId),
       addQty: (variantId: number, userId: number, quantity: number, note?: string) => ipcRenderer.invoke('db:variants:addQty', variantId, userId, quantity, note),
     },
     sales: {
       record: (input: unknown) => ipcRenderer.invoke('db:sales:record', input),
-      getRecent: (limit?: number) => ipcRenderer.invoke('db:sales:getRecent', limit),
+      getRecent: (userId: number, limit?: number) => ipcRenderer.invoke('db:sales:getRecent', userId, limit),
       getByRange: (from: string, to: string) => ipcRenderer.invoke('db:sales:getByRange', from, to),
     },
     stock: {
-      getAll: () => ipcRenderer.invoke('db:stock:getAll'),
-      getLow: () => ipcRenderer.invoke('db:stock:getLow'),
+      getAll: (userId: number) => ipcRenderer.invoke('db:stock:getAll', userId),
+      getLow: (userId: number) => ipcRenderer.invoke('db:stock:getLow', userId),
       getMovements: (variantId: number) => ipcRenderer.invoke('db:stock:getMovements', variantId),
     },
     reports: {
@@ -80,6 +80,16 @@ const api = {
   },
   profile: {
     stats: (userId: number) => ipcRenderer.invoke('db:profile:stats', userId),
+  },
+  shell: {
+    openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
+    openPath: (path: string) => ipcRenderer.invoke('shell:open-path', path),
+  },
+  app: {
+    getInfo: () => ipcRenderer.invoke('app:get-info'),
+  },
+  print: {
+    label: (html: string) => ipcRenderer.invoke('print:label', html),
   },
 };
 

@@ -1,9 +1,10 @@
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { attributeText, categoryIcons, margin, money, stockStatus, type ProductRow } from '@/utils/productUtils';
 
-export const ProductCard = ({ product }: { product: ProductRow }) => {
+export const ProductCard = memo(({ product }: { product: ProductRow }) => {
   const navigate = useNavigate();
   const Icon = categoryIcons[product.category] ?? categoryIcons.other;
   const quantity = Number(product.total_quantity ?? 0);
@@ -38,7 +39,9 @@ export const ProductCard = ({ product }: { product: ProductRow }) => {
       <small>{variantCount || 1} variants</small>
     </Card>
   );
-};
+});
+
+ProductCard.displayName = 'ProductCard';
 
 export const ProductPreviewCard = ({
   name,

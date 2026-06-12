@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useAuth } from '@/store/AuthContext';
 import { parseAttributes } from '@/utils/productUtils';
 
 export interface SaleVariant {
@@ -38,6 +39,7 @@ const mapVariant = (row: VariantSkuRow): SaleVariant => ({
 });
 
 export const useSaleLookup = () => {
+  const { user } = useAuth();
   const [variant, setVariant] = useState<SaleVariant | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -45,12 +47,12 @@ export const useSaleLookup = () => {
 
   const lookup = useCallback(async (sku: string) => {
     const clean = sku.trim();
-    if (!clean) return null;
+    if (!clean || !user) return null;
     setIsLoading(true);
     setError('');
     setNotFoundSku('');
     try {
-      const row = (await window.api.db.variants.getBySku(clean)) as VariantSkuRow | undefined;
+      const row = (await window.api.db.variants.getBySku(clean, user.id)) as VariantSkuRow | undefined;
       if (!row) {
         setVariant(null);
         setNotFoundSku(clean);
@@ -63,7 +65,7 @@ export const useSaleLookup = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const reset = () => {
     setVariant(null);

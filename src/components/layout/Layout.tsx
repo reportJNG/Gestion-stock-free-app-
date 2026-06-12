@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 
@@ -9,7 +10,9 @@ export const Layout = () => {
       <div className="main-area">
         <TopBar />
         <main className="page-content">
-          <Outlet />
+          <ErrorBoundary variant="section">
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

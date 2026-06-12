@@ -1,14 +1,14 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { KeyboardShortcuts } from '@/components/KeyboardShortcuts';
 import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { ToastProvider } from '@/components/ui/Toast';
+import { ToastProvider } from '@/components/ui/ToastProvider';
 import { DashboardPage } from '@/routes/DashboardPage';
 import { ArchivesPage } from '@/routes/ArchivesPage';
-import { Dev } from '@/routes/Dev';
+import { AboutPage } from '@/routes/AboutPage';
 import { EconomyPage } from '@/routes/EconomyPage';
 import { ForgotPasswordPage } from '@/routes/ForgotPasswordPage';
 import { LoginPage } from '@/routes/LoginPage';
-import { Page } from '@/routes/Page';
 import { ProductDetails } from '@/routes/ProductDetails';
 import { ProductsPage } from '@/routes/ProductsPage';
 import { RegisterPage } from '@/routes/RegisterPage';
@@ -17,15 +17,18 @@ import { ScannerPage } from '@/routes/ScannerPage';
 import { ProfilePage } from '@/routes/ProfilePage';
 import { SettingsPage } from '@/routes/SettingsPage';
 import { StockPage } from '@/routes/StockPage';
+import { WorkersPage } from '@/routes/WorkersPage';
 
 export const App = () => {
   return (
     <ToastProvider>
+      <KeyboardShortcuts />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/dev" element={<Navigate to="/about" replace />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/home" element={<DashboardPage />} />
@@ -37,11 +40,12 @@ export const App = () => {
             <Route path="/economy" element={<EconomyPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/contact" element={<Page title="Contact" />} />
             <Route path="/archives" element={<ArchivesPage />} />
-            <Route path="/dev" element={<Dev />} />
+            <Route path="/workers" element={<WorkersPage />} />
+            <Route path="/about" element={<AboutPage />} />
           </Route>
         </Route>
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </ToastProvider>
   );

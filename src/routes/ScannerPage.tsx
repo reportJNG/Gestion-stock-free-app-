@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { useScanner } from '@/hooks/useScanner';
 import { useSaleLookup, type SaleVariant } from '@/hooks/useSaleLookup';
 import { useRecordSale } from '@/hooks/useRecordSale';
+import { useAuth } from '@/store/AuthContext';
 import { categoryIcons, money, stockStatus, variantLabel } from '@/utils/productUtils';
 
 interface BuyerRow {
@@ -34,6 +35,7 @@ const parseAttrs = (value: string) => {
 };
 
 export const ScannerPage = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const manualInputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<'camera' | 'manual'>('camera');
@@ -77,18 +79,27 @@ export const ScannerPage = () => {
   }, [mode]);
 
   useEffect(() => {
-    window.api.db.all('SELECT name FROM buyers ORDER BY total_spent DESC LIMIT 50').then((rows: BuyerRow[]) => setBuyers(rows));
-  }, []);
+    if (!user) {
+      setBuyers([]);
+      return;
+    }
+    window.api.db
+      .all('SELECT name FROM buyers WHERE user_id = ? ORDER BY total_spent DESC LIMIT 50', [user.id])
+      .then((rows: BuyerRow[]) => setBuyers(rows));
+  }, [user]);
 
   useEffect(() => {
-    if (nameSearch.trim().length < 2) {
+    if (!user || nameSearch.trim().length < 2) {
       setProductMatches([]);
       return;
     }
     window.api.db
-      .all('SELECT id, name, category FROM products WHERE name LIKE ? AND is_archived = 0 ORDER BY name LIMIT 8', [`%${nameSearch}%`])
+      .all(
+        'SELECT id, name, category FROM products WHERE user_id = ? AND name LIKE ? AND is_archived = 0 ORDER BY name LIMIT 8',
+        [user.id, `%${nameSearch}%`],
+      )
       .then((rows: ProductRow[]) => setProductMatches(rows));
-  }, [nameSearch]);
+  }, [nameSearch, user]);
 
   const loadProductVariants = async (id: number) => {
     const rows = (await window.api.db.variants.getByProduct(id)) as VariantRow[];
